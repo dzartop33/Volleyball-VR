@@ -2,93 +2,55 @@
 #include <android/log.h>
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
-#include <vector>
+#include <openxr/openxr.h>
+#include <openxr/openxr_platform.h>
 
 #define LOG_TAG "VR_NATIVE"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
-// --- ШЕЙДЕРЫ (Код для видеокарты) ---
-// Этот код превращает 3D координаты в пиксели на экране
-const char* vertex_shader_source = 
-    "#version 300 es\n"
-    "layout(location = 0) in vec3 aPos;\n"
-    "uniform mat4 uProjection;\n"
-    "uniform mat4 uView;\n"
-    "void main() {\n"
-    "   gl_Position = uProjection * uView * vec4(aPos, 1.0);\n"
-    "}\0";
-
-const char* fragment_shader_source = 
-    "#version 300 es\n"
-    "precision mediump float;\n"
-    "out vec4 FragColor;\n"
-    "void main() {\n"
-    "   FragColor = vec4(0.3, 0.2, 0.1, 1.0);\n" // Цвет паркета (коричневый)
-    "}\0";
+/**
+ * ВЕРСИЯ 1.3: OPENXR INITIALIZATION
+ * Мы запрашиваем у Quest 3s доступ к стереоскопическим линзам.
+ */
 
 struct Engine {
-    EGLDisplay display;
-    EGLSurface surface;
-    EGLContext context;
-    GLuint program;
-    GLuint vao, vbo;
+    XrInstance instance;
+    XrSession session;
+    XrSystemId systemId;
 };
 
-// Функция для подготовки площадки (создаем прямоугольник)
-void init_court(struct Engine* engine) {
-    // 1. Компиляция шейдеров
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertex_shader_source, NULL);
-    glCompileShader(vertexShader);
+void init_openxr(struct Engine* engine) {
+    LOGI("Initializing OpenXR...");
+    
+    // 1. Создание инстанса OpenXR
+    XrInstanceCreateInfo createInfo = {XR_TYPE_INSTANCE_CREATE_INFO};
+    strncpy(createInfo.applicationInfo.applicationName, "PixelVolleyball", XR_MAX_APPLICATION_NAME_SIZE);
+    createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
 
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragment_shader_source, NULL);
-    glCompileShader(fragmentShader);
+    if (xrCreateInstance(&createInfo, &engine->instance) != XR_SUCCESS) {
+        LOGI("Failed to create OpenXR Instance");
+        return;
+    }
 
-    engine->program = glCreateProgram();
-    glAttachShader(engine->program, vertexShader);
-    glAttachShader(engine->program, fragmentShader);
-    glLinkProgram(engine->program);
+    // 2. Получение System ID (ID шлема)
+    XrSystemGetInfo systemInfo = {XR_TYPE_SYSTEM_GET_INFO};
+    systemInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
+    xrGetSystem(engine->instance, &systemInfo, &engine->systemId);
 
-    // 2. Создание геометрии (Координаты площадки 9x18 метров)
-    float vertices[] = {
-        -4.5f, 0.0f, -9.0f,
-         4.5f, 0.0f, -9.0f,
-         4.5f, 0.0f,  9.0f,
-        -4.5f, 0.0f, -9.0f,
-         4.5f, 0.0f,  9.0f,
-        -4.5f, 0.0f,  9.0f
-    };
-
-    glGenVertexArrays(1, &engine->vao);
-    glGenBuffers(1, &engine->vbo);
-    glBindVertexArray(engine->vao);
-    glBindBuffer(GL_ARRAY_BUFFER, engine->vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-}
-
-void draw_frame(struct Engine* engine) {
-    if (engine->display == NULL) return;
-
-    glClearColor(0.1f, 0.1f, 0.2f, 1.0f); // Темный фон
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glUseProgram(engine->program);
-    glBindVertexArray(engine->vao);
-    glDrawArrays(GL_TRIANGLES, 0, 6); // Рисуем площадку
-
-    eglSwapBuffers(engine->display, engine->surface);
+    LOGI("OpenXR Instance and System ID: OK");
 }
 
 void android_main(struct android_app* state) {
-    LOGI("VR Engine-less: Rendering Court...");
-    // В следующих шагах добавим инициализацию EGL и цикл событий
+    Engine engine = {};
+    init_openxr(&engine);
+    
+    while (true) {
+        // Здесь будет цикл рендеринга в обе линзы
+    }
 }
 
 extern "C" {
     void ANativeActivity_onCreate(ANativeActivity* activity, void* savedState, size_t savedStateSize) {
-        LOGI("NativeActivity: Ready for GL Shaders");
+        LOGI("NativeActivity: Ready for OpenXR");
     }
 }
