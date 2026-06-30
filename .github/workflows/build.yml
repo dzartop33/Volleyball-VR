@@ -1,4 +1,4 @@
-name: Build Native VR APK
+name: Build Native APK
 on: [push]
 jobs:
   build:
@@ -10,34 +10,18 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Download SDKs
+      - name: Build with Gradle
         run: |
-          # Скачиваем OpenXR (версия 1.1.41 - самая свежая и стабильная)
-          curl -L -o openxr.zip https://github.com/KhronosGroup/OpenXR-SDK/releases/download/release-1.1.41/openxr_sdk_release_1.1.41.zip
-          unzip -q openxr.zip -d openxr_temp
-          
-          # Создаем папки для нашего проекта
-          mkdir -p app/src/main/cpp/include/openxr
-          mkdir -p app/src/main/cpp/libs/arm64-v8a
-          
-          # Копируем заголовки и библиотеку
-          cp -r openxr_temp/include/openxr/* app/src/main/cpp/include/openxr/
-          cp openxr_temp/active_runtime/android/arm64-v8a/libopenxr_loader.so app/src/main/cpp/libs/arm64-v8a/
-          
-          # Скачиваем GLM (математика)
-          curl -L -o glm.zip https://github.com/g-truc/glm/releases/download/1.0.1/glm-1.0.1.zip
-          unzip -q glm.zip -d glm_temp
-          mkdir -p app/src/main/cpp/include/glm
-          cp -r glm_temp/glm/* app/src/main/cpp/include/glm/
-
-      - name: Build APK with Gradle
-        run: |
-          # Используем системный gradle, он надежнее
-          gradle assembleDebug
+          # Создаем базовую структуру, если она сломалась
+          gradle init --type basic --quiet || true
+          # Запускаем сборку
+          gradle assembleDebug --stacktrace
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Volleyball-Pure-Native
+          name: Volleyball-Native-Final
           path: app/build/outputs/apk/debug/app-debug.apk
