@@ -10,18 +10,16 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
 
-      - name: Build with Gradle
+      - name: Build APK
         run: |
-          # Создаем базовую структуру, если она сломалась
+          # Принудительная инициализация проекта
           gradle init --type basic --quiet || true
-          # Запускаем сборку
-          gradle assembleDebug --stacktrace
+          # Сборка
+          gradle assembleDebug
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Volleyball-Native-Final
+          name: Volleyball-Pure-Native
           path: app/build/outputs/apk/debug/app-debug.apk
