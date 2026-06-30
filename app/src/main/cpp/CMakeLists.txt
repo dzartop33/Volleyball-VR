@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(volleyball_logic)
+add_library(volleyball_logic SHARED main.cpp)
+find_library(log-lib log)
+target_link_libraries(volleyball_logic ${log-lib} android GLESv3 EGL)
