@@ -1,14 +1,38 @@
-apply plugin: 'com.android.application'
+plugins {
+    id 'com.android.application'
+}
+
 android {
     namespace 'com.pro.volleyball'
     compileSdk 34
+
     defaultConfig {
         applicationId "com.pro.volleyball"
         minSdk 29
         targetSdk 34
         versionCode 1
         versionName "1.0"
-        externalNativeBuild { cmake { cppFlags "-std=c++17" } }
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++17"
+                abiFilters 'arm64-v8a'
+            }
+        }
     }
-    externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt" } }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+        }
+    }
+
+    buildFeatures {
+        prefab true
+    }
+}
+
+dependencies {
+    // Автоматическая загрузка OpenXR от Khronos
+    implementation 'org.khronos.openxr:openxr_loader_for_android:1.1.41'
 }
