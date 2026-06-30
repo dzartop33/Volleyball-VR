@@ -1,4 +1,4 @@
-name: Build Native APK
+name: Build Pure Native APK
 on: [push]
 jobs:
   build:
@@ -13,13 +13,11 @@ jobs:
 
       - name: Build APK
         run: |
-          # Принудительная инициализация проекта
-          gradle init --type basic --quiet || true
-          # Сборка
-          gradle assembleDebug
+          # Используем встроенный в систему Gradle
+          gradle assembleDebug --no-daemon
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Volleyball-Pure-Native
+          name: Volleyball-Native
           path: app/build/outputs/apk/debug/app-debug.apk
