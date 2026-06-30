@@ -10,37 +10,34 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
 
-      - name: Download SDKs (OpenXR & GLM)
+      - name: Download SDKs
         run: |
-          # 1. Скачиваем OpenXR SDK (Проверенная ссылка)
-          wget -q https://github.com/KhronosGroup/OpenXR-SDK/releases/download/release-1.1.36/openxr_sdk_release_1.1.36.zip
-          unzip -q openxr_sdk_release_1.1.36.zip -d openxr_temp
+          # Скачиваем OpenXR (версия 1.1.41 - самая свежая и стабильная)
+          curl -L -o openxr.zip https://github.com/KhronosGroup/OpenXR-SDK/releases/download/release-1.1.41/openxr_sdk_release_1.1.41.zip
+          unzip -q openxr.zip -d openxr_temp
+          
+          # Создаем папки для нашего проекта
           mkdir -p app/src/main/cpp/include/openxr
-          cp -r openxr_temp/include/openxr/* app/src/main/cpp/include/openxr/
           mkdir -p app/src/main/cpp/libs/arm64-v8a
+          
+          # Копируем заголовки и библиотеку
+          cp -r openxr_temp/include/openxr/* app/src/main/cpp/include/openxr/
           cp openxr_temp/active_runtime/android/arm64-v8a/libopenxr_loader.so app/src/main/cpp/libs/arm64-v8a/
           
-          # 2. Скачиваем GLM (Проверенная ссылка)
-          wget -q https://github.com/g-truc/glm/releases/download/1.0.1/glm-1.0.1.zip
-          unzip -q glm-1.0.1.zip -d glm_temp
+          # Скачиваем GLM (математика)
+          curl -L -o glm.zip https://github.com/g-truc/glm/releases/download/1.0.1/glm-1.0.1.zip
+          unzip -q glm.zip -d glm_temp
           mkdir -p app/src/main/cpp/include/glm
           cp -r glm_temp/glm/* app/src/main/cpp/include/glm/
-          
-          # Очистка
-          rm -rf openxr_temp glm_temp *.zip
 
-      - name: Build APK
+      - name: Build APK with Gradle
         run: |
-          # Создаем исполняемый файл градла, если его нет
-          gradle init --type basic --quiet || true
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          # Используем системный gradle, он надежнее
+          gradle assembleDebug
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Volleyball-Native-Pure-Fixed
+          name: Volleyball-Pure-Native
           path: app/build/outputs/apk/debug/app-debug.apk
